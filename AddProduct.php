@@ -11,12 +11,6 @@ $db = new Database($dbConfig->getHost(), $dbConfig->getUser(), $dbConfig->getPas
 $productObj = new Product($db);
 
 
-?>
-
-
-
-
-
 <h1 class="text-center mb-4">Add New Product</h1>
 
 <form action="" method="post" class="form1 text-center" enctype="multipart/form-data">
