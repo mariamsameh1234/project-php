@@ -9,7 +9,7 @@ include_once 'business_logic.php';
 $dbConfig = new DatabaseConfig();
 $db = new Database($dbConfig->getHost(), $dbConfig->getUser(), $dbConfig->getPass(), $dbConfig->getDbName());
 $productObj = new Product($db);
-
+?>
 
 <h1 class="text-center mb-4">Add New Product</h1>
 
