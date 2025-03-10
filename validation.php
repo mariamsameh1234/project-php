@@ -1,80 +1,93 @@
 <?php
+// ✅ عرض جميع الأخطاء للمساعدة في التصحيح
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-require 'database.php';
-require 'business_logic.php';
+include 'config.php';
+include 'datebase.php';
 
-$db = new Database();
+// ✅ الاتصال بالداتا بيز
+$db = new Database(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 $pdo = $db->getConnection();
-$productModel = new Product($pdo);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $product = trim($_POST["product"]);
-    $price = trim($_POST["price"]);
-    $category_id = trim($_POST["category"]);
-    $image = isset($_FILES["img"]) && $_FILES["img"]["error"] == 0 ? $_FILES["img"]["name"] : null;
+    $product = trim($_POST['product']);
+    $price = trim($_POST['price']);
+    $category = trim($_POST['category']);
+    $image_path = "";
 
     $errors = [];
 
-    // ✅ التحقق من أن جميع الحقول ممتلئة
-    if (empty($product)) {
-        $errors[] = "Product name is required.";
+    // ✅ التحقق من الحقول الفارغة
+    if (empty($product) || empty($price) || empty($category)) {
+        $errors[] = "All fields are required!";
     }
 
-    if (empty($price) || !is_numeric($price) || $price <= 0) {
-        $errors[] = "Enter a valid price.";
+    // ✅ التحقق من صحة السعر
+    if (!is_numeric($price) || $price <= 0) {
+        $errors[] = "Invalid price! It must be a positive number.";
     }
 
-    if (empty($category_id)) {
-        $errors[] = "Select a category.";
-    }
+    // ✅ التحقق من رفع الصورة
+    if (isset($_FILES['img']) && $_FILES['img']['error'] === 0) {
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+        $file_ext = strtolower(pathinfo($_FILES['img']['name'], PATHINFO_EXTENSION));
 
-    // ✅ التحقق من صحة الفئة
-    $stmt = $pdo->prepare("SELECT c_id FROM Category WHERE c_id = ?");
-    $stmt->execute([$category_id]);
-    if (!$stmt->fetchColumn()) {
-        $errors[] = "Invalid category selected.";
-    }
-
-    // ✅ التحقق من الصورة
-    $image_path = null;
-    if (!$image) {
-        $errors[] = "Please upload an image.";
-    } else {
-        $allowed_ext = ['jpg', 'jpeg', 'png', 'gif'];
-        $ext = strtolower(pathinfo($image, PATHINFO_EXTENSION));
-
-        if (!in_array($ext, $allowed_ext)) {
-            $errors[] = "Invalid image format. Only JPG, PNG, and GIF are allowed.";
-        } else {
-            if (!is_dir('uploads')) {
-                mkdir('uploads', 0777, true);
-            }
-
-            $upload_dir = "uploads/";
-            $image_path = $upload_dir . basename($image);
-
-            if (!move_uploaded_file($_FILES["img"]["tmp_name"], $image_path)) {
-                $errors[] = "Failed to upload image.";
-            }
+        // ✅ التحقق من نوع الملف
+        if (!in_array($file_ext, $allowed_extensions)) {
+            $errors[] = "Invalid file type! Only JPG, PNG, and GIF are allowed.";
         }
-    }
 
-    // ✅ إذا كان هناك أخطاء، إعادة المستخدم مع رسالة خطأ
-    if (!empty($errors)) {
-        $error_message = urlencode(implode("<br>", $errors));
-        header("Location: AddProduct.php?error=$error_message");
-        exit();
-    }
-
-    // ✅ إدخال البيانات في قاعدة البيانات
-    if ($productModel->insert($product, $price, $category_id, $image_path)) {
-        header("Location: add_product.php?success=Product added successfully!");
-        exit();
+        // ✅ التحقق من حجم الملف
+        if ($_FILES['img']['size'] > 2 * 1024 * 1024) {
+            $errors[] = "File size must be less than 2MB!";
+        }
     } else {
-        header("Location: add_product.php?error=Failed to add product.");
-        exit();
+        $errors[] = "Product image is required!";
     }
+
+    // ✅ عرض الأخطاء إن وجدت
+    if (!empty($errors)) {
+        foreach ($errors as $error) {
+            echo "<p style='color:red;'>$error</p>";
+        }
+        exit;
+    }
+
+    // ✅ رفع الصورة وتحديد المسار
+    $upload_dir = "uploads/";
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
+
+    $file_name = time() . "_" . uniqid() . "." . $file_ext;
+    $target_file = $upload_dir . $file_name;
+
+    if (move_uploaded_file($_FILES["img"]["tmp_name"], $target_file)) {
+        $image_path = $file_name;
+    } else {
+        echo "<p style='color:red;'>Failed to upload image!</p>";
+        exit;
+    }
+
+    // ✅ إدخال البيانات في الداتا بيز
+    $stmt = $pdo->prepare("INSERT INTO Products (name, price, c_id, image_path, available) VALUES (?, ?, ?, ?, ?)");
+    $available = 'available';
+
+    try {
+        if ($stmt->execute([$product, $price, $category, $image_path, $available])) {
+            if ($stmt->rowCount() > 0) {
+                header("Location: AddProduct.php?success=" . urlencode("Product added successfully!"));
+            } else {
+                header("Location: AddProduct.php?error=" . urlencode("No rows were inserted!"));
+            }
+        } else {
+            header("Location: AddProduct.php?error=" . urlencode("Error inserting data!"));
+        }
+    } catch (PDOException $e) {
+        header("Location: AddProduct.php?error=" . urlencode("Error inserting data: " . $e->getMessage()));
+    }
+
+    exit();
 }
 ?>
