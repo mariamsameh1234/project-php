@@ -7,19 +7,19 @@ include_once 'config.php';
 include_once 'datebase.php';
 include_once 'business_logic.php';
 
-
+// إنشاء كائن DatabaseConfig للحصول على إعدادات الاتصال بقاعدة البيانات
 $dbConfig = new DatabaseConfig();
 $db = new Database($dbConfig->getHost(), $dbConfig->getUser(), $dbConfig->getPass(), $dbConfig->getDbName());
 $productObj = new Product($db);
 
-
+// جلب الفئات من قاعدة البيانات
 $categories = $db->selectAll("Category");
 ?>
 
 <div class="container">
     <h1 class="text-center mb-4">Add New Product</h1>
 
-
+    <!-- 🟢 رسالة النجاح أو الخطأ بتنسيق جديد -->
     <?php if (isset($_GET['success'])) : ?>
         <div class="alert alert-success text-center fw-bold" style="font-size: 18px;">
             <?= htmlspecialchars($_GET['success']) ?>
@@ -50,7 +50,9 @@ $categories = $db->selectAll("Category");
                     <select id="dropdown" name="category" class="form-select" required>
                         <option value="">-- Select Category --</option>
                         <?php foreach ($categories as $category) : ?>
-                            <option value="<?= $category['c_id'] ?>"><?= htmlspecialchars($category['name']) ?></option>
+                            <option value="<?= htmlspecialchars($category['c_id']) ?>">
+                                <?= htmlspecialchars($category['name']) ?>
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </td>
@@ -65,13 +67,12 @@ $categories = $db->selectAll("Category");
                 </td>
             </tr>
             
-           س
+            <!-- 🟢 الأزرار بتصميم عصري وتحسينات -->
             <tr class="button-row">
                 <td colspan="2">
                     <div class="text-center mt-4">
                         <input type="submit" class="btn btn-success text-white px-4 py-2.5 fs-5 rounded-0 d-inline-block mx-2" value="Save">
-                        <input type="reset" class="btn btn-success text-white px-4 py-2.5 fs-5 rounded-0 d-inline-block mx-2" value="Reset">
-                        <button type="button" class="btn btn-success text-white px-4 py-2.5 fs-5 rounded-0 d-inline-block mx-2" onclick="window.location.href='display_users.php'">View All products</button>
+                        <input type="reset" class="btn btn-secondary text-white px-4 py-2.5 fs-5 rounded-0 d-inline-block mx-2" value="Reset">
                     </div>
                 </td>
             </tr>
