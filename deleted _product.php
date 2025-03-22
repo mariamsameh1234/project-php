@@ -1,28 +1,32 @@
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
+session_start();
+require_once 'config.php';
+require_once 'database.php';
+require_once 'business_logic.php';
 
-// تضمين الملفات المطلوبة
-include_once 'config.php';
-include_once 'datebase.php';
-include_once 'business_logic.php'; 
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: login.php");
+    exit();
+}
 
-// إعداد قاعدة البيانات والكائنات المطلوبة
 $dbConfig = new DatabaseConfig();
-$db = new Database($dbConfig->getHost(), $dbConfig->getUser(), $dbConfig->getPass(), $dbConfig->getDbName());
-$productObj = new Product($db);
+$db = new Database($dbConfig);
+$productObj  = new Product($db);
 
-// التحقق من وجود معرّف المستخدم في الـ URL
-if (isset($_GET['id'])) {
-    $productId = $_GET['id']; // تغيير من 'userId' إلى 'productId' إذا كان الكود يتعامل مع المنتجات بدلاً من المستخدمين
 
-    // محاولة حذف المنتج بناءً على المعرّف
-    if ($productObj->delete($productId)) {
-        header("Location: display_products.php?success=Product deleted successfully");
-    } else {
-        header("Location: display_products.php?error=Failed to delete product");
-    }
-    exit;
+if (!isset($_GET['P_id'])) {
+    header("Location: Products.php");
+    exit();
+}
+
+$p_id = intval($_GET['P_id']);
+
+
+if ($productObj ->delete($p_id)) {
+    header("Location: Products.php?success=" . urlencode("Product deleted successfully!"));
+    exit();
+} else {
+    header("Location: Products.php?error=" . urlencode("Failed to delete product!"));
+    exit();
 }
 ?>
