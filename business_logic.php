@@ -1,4 +1,6 @@
 <?php
+require_once 'database.php';
+
 class Product {
     private $db;
 
@@ -7,10 +9,9 @@ class Product {
     }
 
     public function insert($name, $price, $category_id, $image_path) {
-        $available = 'available';
         return $this->db->insert("Products", 
             ["name", "price", "c_id", "image_path", "available"], 
-            [$name, $price, $category_id, $image_path, $available]);
+            [$name, $price, $category_id, $image_path, 'available']);
     }
 
     public function getAllCategories() {
@@ -18,27 +19,25 @@ class Product {
     }
 
     public function getAll() {
-        return $this->db->select(
-            "Products",
-            ["name", "price", "image_path"]
-        );
+        return $this->db->select("Products", ["P_id", "name", "price", "image_path"]);
     }
 
     public function getById($id) {
-        $sql = "SELECT name, price, image_path FROM Products WHERE P_id = ?";
-        $stmt = $this->db->getConnection()->prepare($sql);
-        $stmt->execute([$id]);
-        return $stmt->fetch();
+        $result = $this->db->select("Products", ["name", "price", "image_path"], "P_id = ?", [$id]);
+        return $result ? $result[0] : null;
     }
-
-    public function update($id, $name, $price, $category_id, $image_path, $available) {
-        $sql = "UPDATE Products SET name = ?, price = ?, c_id = ?, image_path = ?, available = ? WHERE P_id = ?";
-        $stmt = $this->db->getConnection()->prepare($sql);
-        return $stmt->execute([$name, $price, $category_id, $image_path, $available, $id]);
+    
+    public function update($id, $name, $price, $image_path) {
+        return $this->db->update("Products", ["name", "price", "image_path"], [$name, $price, $image_path, $id], "P_id = ?");
     }
-
-    public function delete($id) {
-        return $this->db->delete("Products", "P_id = ?", [$id]);
+    
+    public function delete($productId) {
+        try {
+            $this->db->delete("order_contents", "P_id = ?", [$productId]);
+            return $this->db->delete("Products", "P_id = ?", [$productId]); 
+        } catch (PDOException $e) {
+            return false;
+        }
     }
 }
 ?>
