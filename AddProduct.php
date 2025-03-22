@@ -1,25 +1,26 @@
 <?php 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
+require_once 'Auth.php';
 include_once 'header2.php';
+
 include_once 'config.php';
-include_once 'datebase.php';
+include_once 'database.php';
 include_once 'business_logic.php';
 
-// إنشاء كائن DatabaseConfig للحصول على إعدادات الاتصال بقاعدة البيانات
+
 $dbConfig = new DatabaseConfig();
 $db = new Database($dbConfig->getHost(), $dbConfig->getUser(), $dbConfig->getPass(), $dbConfig->getDbName());
 $productObj = new Product($db);
 
-// جلب الفئات من قاعدة البيانات
+
 $categories = $db->selectAll("Category");
 ?>
 
 <div class="container">
     <h1 class="text-center mb-4">Add New Product</h1>
 
-    <!-- 🟢 رسالة النجاح أو الخطأ بتنسيق جديد -->
+    
     <?php if (isset($_GET['success'])) : ?>
         <div class="alert alert-success text-center fw-bold" style="font-size: 18px;">
             <?= htmlspecialchars($_GET['success']) ?>
@@ -67,7 +68,7 @@ $categories = $db->selectAll("Category");
                 </td>
             </tr>
             
-            <!-- 🟢 الأزرار بتصميم عصري وتحسينات -->
+           
             <tr class="button-row">
                 <td colspan="2">
                     <div class="text-center mt-4">
@@ -81,3 +82,4 @@ $categories = $db->selectAll("Category");
 </div>
 
 <?php include_once 'footer.php'; ?>
+
